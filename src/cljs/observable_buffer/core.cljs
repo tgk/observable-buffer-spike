@@ -1,6 +1,6 @@
 (ns observable-buffer.core
   (:require-macros [cljs.core.async.macros :as m :refer [go]])
-  (:require [cljs.core.async :refer [<! >! chan]]
+  (:require [cljs.core.async :refer [<! >! chan put! alts timeout]]
             [cljs.core.async.impl.protocols :as impl]
             [cljs.core.async.impl.buffers :as bufs]))
 
@@ -90,3 +90,31 @@
         (pprint (inspect b))
         (<! c)
         (pprint (inspect b)))))
+
+(defn events
+  [elm type]
+  (let [out (chan)]
+    (.addEventListener
+     elm type
+     (fn [e] (put! out e)))
+    out))
+
+(defn ^:export demo2
+  [pre-elm put-elm take-elm buffer-type]
+  (.log js/console "Demo 2")
+  (let [counter (atom 0)
+        buf (case buffer-type
+              0 (bufs/fixed-buffer 1024)
+              1 (bufs/dropping-buffer 3)
+              2 (bufs/sliding-buffer 3))
+        ch (chan buf)
+        put-ch (events (.getElementById js/document put-elm) "click")
+        take-ch (events (.getElementById js/document take-elm) "click")
+        pre (.getElementById js/document pre-elm)]
+    (set! (.-innerHTML pre) (pr-str (inspect buf)))
+    (go (while true
+          (let [[v c] (alts! [put-ch take-ch])]
+            (condp = c
+              put-ch  (alts! [[ch (swap! counter inc)] (timeout 10)])
+              take-ch (alts! [ch (timeout 10)])))
+          (set! (.-innerHTML pre) (pr-str (inspect buf)))))))

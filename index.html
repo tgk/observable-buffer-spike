@@ -1,11 +1,17 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <script src="http://d3js.org/d3.v3.min.js"></script>
     <script src="observable_buffer.js"></script>
   </head>
   <body>
+
+    <pre id="output"></pre>
+    <a href="#" id="put"><code>&lt;!</code></a>
+    <a href="#" id="take"><code>&gt;!</code></a>
+
     <script>
-      observable_buffer.core.demo1();
+      observable_buffer.core.demo2("output", "put", "take", 2);
     </script>
   </body>
 </html>
