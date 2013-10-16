@@ -4,17 +4,23 @@
             [cljs.core.async.impl.protocols :as impl]
             [cljs.core.async.impl.buffers :as bufs]))
 
+(defn empty-ring-buffer
+  [ring-buffer]
+  (loop [elms nil]
+    (if (> (.-length ring-buffer) 0)
+      (recur (cons (.pop ring-buffer) elms))
+      elms)))
+
+(defn fill-ring-buffer
+  [ring-buffer elms]
+  (doseq [e elms]
+    (.unshift ring-buffer e)))
+
 (defn ring-buffer-seq
   [ring-buffer]
-  (let [arr (make-array (alength (.-arr ring-buffer)))]
-    (doseq [idx (range (alength (.-arr ring-buffer)))]
-      (aset arr idx
-            (aget (.-arr ring-buffer)
-                  (js-mod
-                   (- (.-head ring-buffer) idx 1)
-                   (alength (.-arr ring-buffer))))))
-    (take (.-length ring-buffer)
-          (js->clj arr))))
+  (let [elms (empty-ring-buffer ring-buffer)]
+    (fill-ring-buffer ring-buffer (reverse elms))
+    elms))
 
 (defprotocol TransparentBuffer
   (inspect [this]))
